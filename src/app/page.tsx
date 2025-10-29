@@ -3,6 +3,9 @@
 import { useAccount, useConnect, useDisconnect, useSignMessage } from 'wagmi'
 import { useState, useEffect } from 'react'
 import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { createPublicClient, createWalletClient, custom, getContract, parseAbi, parseEther } from 'viem';
+import { avalancheFuji, sepolia, mainnet } from 'viem/chains';
+import { nftABI } from './abi';
 
 
 function App() {
@@ -22,6 +25,10 @@ function App() {
   const { address, isConnected } = useAccount();
   const [isSigned, setIsSigned] = useState(false);
   const { signMessageAsync } = useSignMessage();
+  const [publicClient, setPublicClient] = useState<any>();
+  const [walletClient, setWalletClient] = useState<any>();
+
+
   const initGame = async () => {
     const response = await fetch(`/api?address=${address}`);
     const data = await response.json();
@@ -29,6 +36,47 @@ function App() {
     setDealerHand(data.dealerHand);
     setMessage(data.message);
     setScore(data.score);
+
+    // const [account] = await window.ethereum!.request({ method: 'eth_requestAccounts' })
+    // console.log(account);
+
+    if (typeof window !== "undefined" && window.ethereum) {
+      const _publicClient = createPublicClient({
+        transport: custom(window.ethereum),
+        "chain": sepolia,
+      })
+
+      const _walletClient = createWalletClient({
+        transport: custom(window.ethereum),
+        "chain": sepolia,
+        account: address,
+      })
+      setWalletClient(() => _walletClient)
+      setPublicClient(() => _publicClient)
+    } else {
+      console.error("window.ethereum is not defined");
+    }
+
+
+  }
+
+  async function handleSendTx() {
+    const contractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
+    const nftContract = getContract({
+      address: contractAddress as `0x${string}`,
+      abi: nftABI,
+      client: {
+        public: publicClient,
+        wallet: walletClient,
+      },
+    })
+    // 铸造nft给指定地址
+    const tx = await nftContract.write.safeMint([address]);
+
+    console.log("交易hash:", tx);
+
+    return 0;
+
   }
 
   useEffect(() => {
@@ -39,6 +87,10 @@ function App() {
   async function handleHit() {
     const response = await fetch(`/api?address=${address}`, {
       method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("jwt") || ""}`,
+      },
       body: JSON.stringify({
         action: "hit",
         address
@@ -54,6 +106,10 @@ function App() {
   async function handleStand() {
     const response = await fetch("/api", {
       method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("jwt") || ""}`,
+      },
       body: JSON.stringify({
         action: "stand",
         address
@@ -80,6 +136,10 @@ function App() {
     const signature = await signMessageAsync({ message });
     const response = await fetch("/api", {
       method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("jwt") || ""}`,
+      },
       body: JSON.stringify({
         action: "auth",
         address,
@@ -89,6 +149,8 @@ function App() {
     });
 
     if (response.status === 200) {
+      const { jsonwebtoken } = await response.json();
+      localStorage.setItem("jwt", jsonwebtoken);
       setIsSigned(true);
       initGame();
     }
@@ -111,6 +173,7 @@ function App() {
         {/* <button onClick={handleSign} className="border-black bg-amber-300 p-2 rounded-md">Sign with your wallet</button> */}
         <h1 className="text-3xl bold">Welcome to web3 game black jack</h1>
         <h2 className={`text-3xl bold ${message.includes("win") ? "bg-green-300" : "bg-amber-300"}`}>Score: {score} {message}</h2>
+        <button onClick={handleSendTx} className="border-black bg-amber-300 p-2 rounded-md"> GET NFT </button>
         <div className="mt-4"></div>
         <div>
           <h2>Dealer hand</h2>

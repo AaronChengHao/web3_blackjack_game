@@ -1,5 +1,6 @@
 import Redis from 'ioredis';
 import { verifyMessage } from "viem";
+import jwt from 'jsonwebtoken';
 
 // 初始化 Redis 客户端（根据实际 Redis 配置修改）
 const redisClient = new Redis({
@@ -181,13 +182,35 @@ export async function POST(req: Request) {
                 status: 401,
             })
         } else {
+            const token = jwt.sign({ address }, process.env.JWT_SECRET!, { expiresIn: "1h" });
             return Response.json({
                 message: "auth success",
+                jsonwebtoken: token,
             }, {
                 status: 200,
             })
         }
-    } else if (action === "hit") {
+    }
+    const token = req.headers.get("Authorization")?.split(" ")[1] || "";
+    if (!token) {
+        return Response.json({
+            message: "token is required",
+        }, {
+            status: 401,
+        })
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || "") as { address: string };
+    if (decoded.address.toLocaleLowerCase() !== address.toLocaleLowerCase()) {
+        return Response.json({
+            message: "invalid token",
+        }, {
+            status: 401,
+        })
+    }
+
+
+    if (action === "hit") {
         const [cards, remainingDeck] = getRandomCards(gameState.deck, 1);
         gameState.playerHand.push(...cards);
         gameState.deck = remainingDeck;
