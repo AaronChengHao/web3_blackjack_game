@@ -1,1 +1,1 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-wagmi`](https://github.com/wevm/wagmi/tree/main/packages/create-wagmi).
+这是一个翻牌21点游戏，庄家在游戏开始时亮出的一张牌，而玩家通常会拿到两张牌。游戏的目标是让自己的牌面总点数尽量接近21点，但又不能超过21点。如果分数超过1000分，就可以获取一个NFT作为奖励。
