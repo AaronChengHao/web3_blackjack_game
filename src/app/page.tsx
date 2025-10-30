@@ -70,7 +70,7 @@ function App() {
           public: publicClient,
           wallet: walletClient,
         },
-      });
+      }) as any;
       const tx = await nftContract.write.safeMint([address]);
       console.log("交易hash:", tx);
     } catch (error) {

@@ -4,9 +4,9 @@ import jwt from 'jsonwebtoken';
 
 // 初始化 Redis 客户端（根据实际 Redis 配置修改）
 const redisClient = new Redis({
-    host: '192.168.123.125',    // Redis 服务器地址（默认本地）
-    port: 6379,           // Redis 端口（默认 6379）
-    password: 'redis_EXtJkJ',         // 若 Redis 有密码，填写此处
+    host: process.env.REDIS_HOST,    // Redis 服务器地址（默认本地）
+    port: Number(process.env.REDIS_PORT),           // Redis 端口（默认 6379）
+    password: process.env.REDIS_PASSWORD,         // 若 Redis 有密码，填写此处
     db: 7,                // 数据库编号（默认 0）
     retryStrategy: (times) => {
         // 重试策略：失败后重试，重试间隔递增（最多重试 10 次）
