@@ -22,6 +22,7 @@ export default async function RootLayout(props: { children: ReactNode }) {
   )
   return (
     <html lang="en">
+      <title>21点游戏 - Web3 Casino Game</title>
       <body className={inter.className}>
         <Providers initialState={initialState}>{props.children}</Providers>
       </body>
